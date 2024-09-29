@@ -148,12 +148,16 @@ def call_experiment(exp_name, thunk, seed=0, num_cpu=1, data_dir=None,
         print('Note: Call experiment is not handling logger_kwargs.\n')
 
     def thunk_plus():
+        import spinup
         # Make 'env_fn' from 'env_name'
         if 'env_name' in kwargs:
-            import gym
+            import gymnasium as gym
             env_name = kwargs['env_name']
-            kwargs['env_fn'] = lambda : gym.make(env_name)
+            env_kwargs = {k[8:]:v for k,v in kwargs.items() if k.startswith('env_arg_')}
+            kwargs['env_fn'] = lambda : gym.make(env_name, **env_kwargs)
             del kwargs['env_name']
+            for ek in env_kwargs:
+                del kwargs[f'env_arg_{ek}']
 
         # Fork into multiple processes
         mpi_fork(num_cpu)
