@@ -46,6 +46,32 @@ python -m spinup.run ppo --hid "[32,32]" --env LunarLander-v2 --exp_name install
 python -m spinup.run test_policy /home/xxx/rl-spinningup/data/installtest/installtest_s0
 ```
 
+### Mujoco
+
+If having `fatal error: GL/osmesa.h: No such file or directory` errors:
+```
+sudo apt install libosmesa6-dev libgl1-mesa-glx libglfw3
+```
+
+`FileNotFoundError: [Errno 2] No such file or directory: 'patchelf'`
+```
+sudo apt-get install patchelf
+```
+To solve AttributeError: 'mujoco._structs.MjData' object has no attribute 'solver_iter'
+
+'GLIBCXX_3.4.30' not found
+```
+conda install -c conda-forge gcc=12.1.0
+```
+
+
+https://github.com/Farama-Foundation/Gymnasium/issues/749#issuecomment-1808355111
+```
+mujoco<3
+```
+works.
+
+
 ### Motivation of renovation and rough plans
 
 Spinning Up is a great learning resource for reinforcement learning (RL). However, this project is in maintenance mode and is outdated, for example:

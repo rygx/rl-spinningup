@@ -31,6 +31,16 @@ MPI_COMPATIBLE_ALGOS = ['vpg', 'trpo', 'ppo']
 # Algo names (used in a few places)
 BASE_ALGO_NAMES = ['vpg', 'trpo', 'ppo', 'ddpg', 'td3', 'sac']
 
+# breakpoint()
+
+print(os.environ["LD_LIBRARY_PATH"])
+ld_library_paths = os.environ["LD_LIBRARY_PATH"].split(':')
+mujoco_path = '/home/miko-debian/.mujoco/mujoco210/bin'
+if mujoco_path not in ld_library_paths:
+    ld_library_paths.append(mujoco_path)
+
+os.environ["LD_LIBRARY_PATH"]=':'.join(ld_library_paths)
+
 
 def add_with_backends(algo_list):
     # helper function to build lists with backend-specific function names
