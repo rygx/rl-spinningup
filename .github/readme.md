@@ -4,6 +4,8 @@ A renovation of "Spinning Up" reinforcement learning resources
 
 [Link to original README](../readme.md)
 
+NOTE: the Tensorflow 1 is disabled. Please use Torch at this moment. Jax/Flax is planned to replace TF1.
+
 ### Updated installation instructions
 
 (state: initially verified on Debian)
