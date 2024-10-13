@@ -18,6 +18,8 @@ dependencies = [
     "mujoco-py<2.2,>=2.1",
     "ipython",
     "ipykernel",
+    "jax",
+    "flax",
     "joblib",
     "matplotlib==3.9.2",
     "mpi4py",
