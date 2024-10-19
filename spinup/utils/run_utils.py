@@ -130,6 +130,9 @@ def call_experiment(exp_name, thunk, seed=0, num_cpu=1, data_dir=None, no_mpi = 
 
     # Determine number of CPU cores to run on
     num_cpu = psutil.cpu_count(logical=False) if num_cpu=='auto' else num_cpu
+    if no_mpi:
+        print(colorize('With no_mpi set as True, num_cpu is overriden as 1.', color='yellow', bold=True))
+        num_cpu = 1
 
     # Send random seed to thunk
     kwargs['seed'] = seed
