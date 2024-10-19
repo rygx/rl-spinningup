@@ -6,6 +6,19 @@ A renovation of "Spinning Up" reinforcement learning resources
 
 NOTE: the Tensorflow 1 is disabled. Please use Torch at this moment. Jax/Flax is planned to replace TF1.
 
+### Newly added features
+#### `no_mpi` mode
+Normally MPI is used to fork multiple processes. The way it is implemented is that a call function is serialized and then deserialized when called under MPI. 
+This effectively creates isolated runnable copies and thus avoids possible problems of concurrency and racing conditions. However, this also isolates the codes
+and makes them invisible to the main process, causing difficulties debugging. 
+
+`no_mpi` model is introduced to disable the serialize-deserialize approach and directly call the main function. To use it, simply add `--no_mpi` to the run arguments, such as:
+
+```
+python -m spinup.run ppo --hid "[32,32]" --env Walker2d-v4 --exp_name mujocotest --no_mpi
+```
+
+
 ### Updated installation instructions
 
 (state: initially verified on Debian)

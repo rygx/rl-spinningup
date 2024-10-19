@@ -16,7 +16,7 @@ from textwrap import dedent
 
 # Command line args that will go to ExperimentGrid.run, and must possess unique
 # values (therefore must be treated separately).
-RUN_KEYS = ['num_cpu', 'data_dir', 'datestamp']
+RUN_KEYS = ['num_cpu', 'data_dir', 'datestamp', 'no_mpi']
 
 # Command line sweetener, allowing short-form flags for common, longer flags.
 SUBSTITUTIONS = {'env': 'env_name',
