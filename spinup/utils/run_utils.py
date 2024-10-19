@@ -19,6 +19,7 @@ from textwrap import dedent
 import time
 from tqdm import trange
 import zlib
+import gymnasium as gym
 
 DIV_LINE_WIDTH = 80
 
@@ -86,7 +87,7 @@ def setup_logger_kwargs(exp_name, seed=None, data_dir=None, datestamp=False):
     return logger_kwargs
 
 
-def call_experiment(exp_name, thunk, seed=0, num_cpu=1, data_dir=None, 
+def call_experiment(exp_name, thunk, seed=0, num_cpu=1, data_dir=None, no_mpi = False,
                     datestamp=False, **kwargs):
     """
     Run a function (thunk) with hyperparameters (kwargs), plus configuration.
@@ -129,6 +130,9 @@ def call_experiment(exp_name, thunk, seed=0, num_cpu=1, data_dir=None,
 
     # Determine number of CPU cores to run on
     num_cpu = psutil.cpu_count(logical=False) if num_cpu=='auto' else num_cpu
+    if no_mpi:
+        print(colorize('With no_mpi set as True, num_cpu is overriden as 1.', color='yellow', bold=True))
+        num_cpu = 1
 
     # Send random seed to thunk
     kwargs['seed'] = seed
@@ -147,45 +151,62 @@ def call_experiment(exp_name, thunk, seed=0, num_cpu=1, data_dir=None,
     else:
         print('Note: Call experiment is not handling logger_kwargs.\n')
 
-    def thunk_plus():
-        import spinup
-        # Make 'env_fn' from 'env_name'
+    if no_mpi:
+        print(colorize('use no_mpi mode', color = 'yellow', bold=True))
         if 'env_name' in kwargs:
-            import gymnasium as gym
             env_name = kwargs['env_name']
             env_kwargs = {k[8:]:v for k,v in kwargs.items() if k.startswith('env_arg_')}
             kwargs['env_fn'] = lambda : gym.make(env_name, **env_kwargs)
             del kwargs['env_name']
             for ek in env_kwargs:
                 del kwargs[f'env_arg_{ek}']
-
-        # Fork into multiple processes
-        mpi_fork(num_cpu)
-
-        # Run thunk
+        # if 'no_mpi' in kwargs:
+        #     del kwargs['no_mpi']
         thunk(**kwargs)
 
-    # Prepare to launch a script to run the experiment
-    pickled_thunk = cloudpickle.dumps(thunk_plus)
-    encoded_thunk = base64.b64encode(zlib.compress(pickled_thunk)).decode('utf-8')
+    else:
+        print(colorize('use MPI mode', color = 'yellow', bold=True))
+        def thunk_plus():
+            import spinup
+            # Make 'env_fn' from 'env_name'
+            if 'env_name' in kwargs:
+                import gymnasium as gym
+                env_name = kwargs['env_name']
+                env_kwargs = {k[8:]:v for k,v in kwargs.items() if k.startswith('env_arg_')}
+                kwargs['env_fn'] = lambda : gym.make(env_name, **env_kwargs)
+                del kwargs['env_name']
+                for ek in env_kwargs:
+                    del kwargs[f'env_arg_{ek}']
+            if 'no_mpi' in kwargs:
+                del kwargs['no_mpi']
 
-    entrypoint = osp.join(osp.abspath(osp.dirname(__file__)),'run_entrypoint.py')
-    cmd = [sys.executable if sys.executable else 'python', entrypoint, encoded_thunk]
-    try:
-        subprocess.check_call(cmd, env=os.environ)
-    except CalledProcessError:
-        err_msg = '\n'*3 + '='*DIV_LINE_WIDTH + '\n' + dedent("""
+            # Fork into multiple processes
+            mpi_fork(num_cpu)
 
-            There appears to have been an error in your experiment.
+            # Run thunk
+            thunk(**kwargs)
 
-            Check the traceback above to see what actually went wrong. The 
-            traceback below, included for completeness (but probably not useful
-            for diagnosing the error), shows the stack leading up to the 
-            experiment launch.
+        # Prepare to launch a script to run the experiment
+        pickled_thunk = cloudpickle.dumps(thunk_plus)
+        encoded_thunk = base64.b64encode(zlib.compress(pickled_thunk)).decode('utf-8')
 
-            """) + '='*DIV_LINE_WIDTH + '\n'*3
-        print(err_msg)
-        raise
+        entrypoint = osp.join(osp.abspath(osp.dirname(__file__)),'run_entrypoint.py')
+        cmd = [sys.executable if sys.executable else 'python', entrypoint, encoded_thunk]
+        try:
+            subprocess.check_call(cmd, env=os.environ)
+        except CalledProcessError:
+            err_msg = '\n'*3 + '='*DIV_LINE_WIDTH + '\n' + dedent("""
+
+                There appears to have been an error in your experiment.
+
+                Check the traceback above to see what actually went wrong. The 
+                traceback below, included for completeness (but probably not useful
+                for diagnosing the error), shows the stack leading up to the 
+                experiment launch.
+
+                """) + '='*DIV_LINE_WIDTH + '\n'*3
+            print(err_msg)
+            raise
 
     # Tell the user about where results are, and how to check them
     logger_kwargs = kwargs['logger_kwargs']
@@ -481,7 +502,7 @@ class ExperimentGrid:
         new_variants = [unflatten_var(var) for var in flat_variants]
         return new_variants
 
-    def run(self, thunk, num_cpu=1, data_dir=None, datestamp=False):
+    def run(self, thunk, num_cpu=1, data_dir=None, datestamp=False, no_mpi = False):
         """
         Run each variant in the grid with function 'thunk'.
 
@@ -547,7 +568,7 @@ class ExperimentGrid:
                 thunk_ = thunk
 
             call_experiment(exp_name, thunk_, num_cpu=num_cpu, 
-                            data_dir=data_dir, datestamp=datestamp, **var)
+                            data_dir=data_dir, datestamp=datestamp, no_mpi=no_mpi, **var)
 
 
 def test_eg():
